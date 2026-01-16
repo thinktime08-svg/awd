@@ -12,3 +12,204 @@
   <script defer type="text/javascript" src="/main.js"></script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 마음 일기 - 키워드에서 일기까지</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@300;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --paper: #fffef0;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .container { width: 100%; max-width: 500px; }
+
+        /* 입력창 및 헤더 */
+        header { text-align: center; margin-bottom: 30px; }
+        header h1 { color: var(--primary); font-size: 1.8rem; }
+
+        .input-card {
+            background: white; padding: 20px; border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%; height: 100px; border: 1px solid #eee;
+            border-radius: 12px; padding: 15px; font-size: 16px;
+            resize: none; box-sizing: border-box; outline: none;
+        }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button {
+            flex: 1; padding: 12px; border: none; border-radius: 10px;
+            cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-save { background: #00b894; color: white; display: none; }
+        .btn-download { background: #fab1a0; color: white; display: none; }
+
+        /* 일기장(결과창) */
+        #diary-capture-area {
+            display: none; margin-top: 20px; padding: 10px;
+        }
+
+        .paper {
+            background-color: var(--paper);
+            background-image: linear-gradient(#e5e5e5 1px, transparent 1px);
+            background-size: 100% 30px; /* 줄노트 효과 */
+            padding: 40px 30px; border-radius: 2px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: relative; line-height: 30px;
+        }
+
+        .paper::before { /* 왼쪽 빨간 줄 */
+            content: ''; position: absolute; left: 20px; top: 0; bottom: 0;
+            width: 1px; background: rgba(255,0,0,0.2);
+        }
+
+        .date { font-family: 'Nanum Pen Script'; font-size: 24px; color: #d63031; border-bottom: none; }
+        .emotion { font-size: 40px; margin: 10px 0; text-align: right; }
+        .content { font-family: 'Nanum Pen Script'; font-size: 26px; min-height: 200px; color: #2d3436; }
+
+        /* 저장된 목록 */
+        .history { width: 100%; margin-top: 40px; }
+        .history h3 { font-size: 1rem; color: #666; }
+        .history-item { 
+            background: white; padding: 10px 15px; border-radius: 10px; 
+            margin-bottom: 10px; font-size: 0.9rem; display: flex; justify-content: space-between;
+        }
+
+        /* 로딩 애니메이션 */
+        #loading { display: none; margin: 10px 0; font-size: 0.9rem; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>✍️ AI 마음 일기</h1>
+        <p>단어만 던지세요, 일기는 제가 쓸게요.</p>
+    </header>
+
+    <div class="input-card">
+        <textarea id="userInput" placeholder="오늘 친구랑 강남에서 만남. 떡볶이 먹음. 기분 최고!"></textarea>
+        <div id="loading">✨ AI가 감정을 분석하고 일기를 쓰고 있어요...</div>
+        <div class="btn-group">
+            <button class="btn-main" onclick="generateDiary()">일기 만들기</button>
+        </div>
+    </div>
+
+    <div id="diary-capture-area">
+        <div class="paper" id="paper">
+            <div class="date" id="resDate"></div>
+            <div class="emotion" id="resEmoji"></div>
+            <div class="content" id="resContent"></div>
+        </div>
+        <div class="btn-group">
+            <button class="btn-save" id="saveBtn" onclick="saveToStorage()">일기장에 보관하기</button>
+            <button class="btn-download" id="downBtn" onclick="downloadImage()">이미지로 저장</button>
+        </div>
+    </div>
+
+    <div class="history">
+        <h3>최근 작성한 기록</h3>
+        <div id="historyList"></div>
+    </div>
+</div>
+
+<script>
+    // 1. 일기 생성 (AI 시뮬레이션)
+    function generateDiary() {
+        const input = document.getElementById('userInput').value;
+        if(!input) return alert("내용을 입력해주세요!");
+
+        document.getElementById('loading').style.display = 'block';
+        
+        // AI가 생각하는 척 1.5초 지연
+        setTimeout(() => {
+            const now = new Date();
+            const dateStr = `${now.getMonth()+1}월 ${now.getDate()}일 ${getDay(now.getDay())}요일`;
+            
+            // 감정 분석 시뮬레이션
+            let emoji = "🙂";
+            let diaryText = "";
+
+            if(input.includes("기분") || input.includes("최고") || input.includes("행복")) {
+                emoji = "🥰";
+                diaryText = `햇살만큼이나 눈부신 하루였다. ${input}... 이 모든 순간이 나에게는 큰 선물 같았다. 오늘의 이 몽글몽글한 기분을 잊지 않고 마음속에 잘 간직해야지.`;
+            } else if(input.includes("피곤") || input.includes("힘들")) {
+                emoji = "😴";
+                diaryText = `몸도 마음도 조금은 지친 오늘. ${input} 등의 일들이 있었지만, 그래도 무사히 하루를 마무리한 나 자신에게 수고했다고 말해주고 싶다. 내일은 좀 더 가벼운 발걸음이길.`;
+            } else {
+                emoji = "📝";
+                diaryText = `담담하게 흘러간 오늘 하루의 기록. ${input}... 특별한 일이 없어도 이렇게 내 마음을 적어 내려가는 것만으로도 충분히 의미 있는 시간이다.`;
+            }
+
+            document.getElementById('resDate').innerText = dateStr;
+            document.getElementById('resEmoji').innerText = emoji;
+            document.getElementById('resContent').innerText = diaryText;
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('diary-capture-area').style.display = 'block';
+            document.getElementById('saveBtn').style.display = 'block';
+            document.getElementById('downBtn').style.display = 'block';
+        }, 1500);
+    }
+
+    function getDay(n) { return ['일','월','화','수','목','금','토'][n]; }
+
+    // 2. 이미지로 저장하기 (html2canvas)
+    function downloadImage() {
+        const paper = document.getElementById('paper');
+        html2canvas(paper).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'my-ai-diary.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    }
+
+    // 3. 로컬 스토리지에 저장 (DB 대용)
+    function saveToStorage() {
+        const diaryData = {
+            date: document.getElementById('resDate').innerText,
+            emoji: document.getElementById('resEmoji').innerText,
+            text: document.getElementById('resContent').innerText.substring(0, 15) + "..."
+        };
+
+        let history = JSON.parse(localStorage.getItem('myDiaries') || '[]');
+        history.unshift(diaryData);
+        localStorage.setItem('myDiaries', JSON.stringify(history));
+        
+        alert("일기장에 안전하게 보관되었습니다!");
+        loadHistory();
+    }
+
+    function loadHistory() {
+        const history = JSON.parse(localStorage.getItem('myDiaries') || '[]');
+        const listDiv = document.getElementById('historyList');
+        listDiv.innerHTML = history.map(d => `
+            <div class="history-item">
+                <span>${d.emoji} ${d.date}</span>
+                <span style="color: #888;">${d.text}</span>
+            </div>
+        `).join('');
+    }
+
+    // 페이지 로드 시 기존 목록 불러오기
+    window.onload = loadHistory;
+</script>
+
+</body>
+</html>
